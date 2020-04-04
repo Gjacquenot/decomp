@@ -1,0 +1,8 @@
+
+language: minimal
+dist: trusty
+services:
+  - docker
+script:
+  - docker build . -t decomp
+  - docker run decomp
