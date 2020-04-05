@@ -1,8 +1,44 @@
+dist: bionic
+language: cpp
 
-language: minimal
-dist: trusty
-services:
-  - docker
+jobs:
+  include:
+    - os: linux
+      compiler: clang
+      env: BTYPE=Release
+    - os: linux
+      compiler: gcc
+      env: BTYPE=Release
+    - os: osx
+      compiler: clang
+      env: BTYPE=Release
+    - os: osx
+      compiler: gcc
+      env: BTYPE=Release
+
+install:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ];
+    then
+    sudo apt-get --yes update;
+    wget https://github.com/catchorg/Catch2/archive/v2.11.3.tar.gz -O catch2.tar.gz;
+    mkdir -p catch2_SRC && tar -xf catch2.tar.gz --strip 1 -C catch2_SRC;
+    mkdir -p catch2_build;
+    cd catch2_build;
+    cmake -DBUILD_TESTING=OFF ../catch2_SRC;
+    sudo make install;
+    cd ..;
+    rm -rf catch2_build catch2.tar.gz catch2_SRC;
+    fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ];
+    then
+    brew install catch2;
+    fi
+
 script:
-  - docker build . -t decomp
-  - docker run decomp
+  - mkdir build && cd build
+  - cmake -Ddecomp_USE_CONAN:BOOL=OFF -Ddecomp_BUILD_TESTS:BOOL=ON -DCMAKE_BUILD_TYPE=$BTYPE $TRAVIS_BUILD_DIR ..
+  - cmake --build .
+  # Test the program
+  - make test
+  # Make sure we can install with no issues.
+  - sudo make install
